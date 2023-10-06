@@ -1,0 +1,3378 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+    <head>
+        <title>Héroes del Silencio - El sueño de los justos - Discografía Interactiva</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta name="description" content="Music Portfolio Template and Audio Player with HTML5 and jQuery" />
+        <meta name="keywords" content="music, audio, html5, player, playlist, template, portfolio, artist, band, albums, discography, jquery"/>
+		<link rel="shortcut icon" href="images/iconohds.png" type="image/x-icon"/>
+        <link rel="stylesheet" href="css/style.css" type="text/css" media="screen"/>
+		<link rel="stylesheet" href="css/skin.css" type="text/css" media="screen"/>
+		<link href="css/jplayer.codrops.css" rel="stylesheet" type="text/css" />
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js"></script>
+		<script src="js/jquery.jcarousel.min.js" type="text/javascript"></script>
+		<script src="js/cufon-yui.js" type="text/javascript"></script>
+		<script type="text/javascript" src="js/jquery.jplayer.min.js"></script>
+		<script src="js/ChunkFive_400.font.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			Cufon.replace('h2,h3,a',{
+				textShadow: '1px 1px 1px #000000'
+			});
+		</script>
+		<script type="text/javascript">
+			$(function() {
+				/**
+				* build the carousel for the Albums
+				*/
+				/**Esto repara el arranque **/
+				$('#mp_content_wrapper').find('.mp_content:visible')
+											.hide();
+				$('.mp_content_init').show();
+				$('#mp_albums').jcarousel({
+					scroll : 7
+				}).children('li')
+				  .bind('click',function(){
+					//when clicking on an album, display its info, and hide the current one
+					var $this = $(this);
+					$('.mp_content_init').hide();
+					$('#mp_content_wrapper').find('.mp_content:visible')
+											.hide();
+											
+												$('#mp_content_wrapper')
+												.find('.mp_content:nth-child('+ parseInt($this.index()+1) +')')
+											    .fadeIn(1000);
+											
+			});
+
+				/****  The Player  ****/
+				// Local copy of jQuery selectors, for performance.
+				var jpPlayTime = $("#jplayer_play_time");
+				var jpTotalTime = $("#jplayer_total_time");
+				var $list 		= $("#jplayer_playlist ul");
+
+				/**
+				* Innitialize the Player 
+				* (see jPlayer documentation for other options)
+				*/
+				$("#jquery_jplayer").jPlayer({
+					oggSupport	: true,
+					preload		:"auto"
+				})
+				.jPlayer("onProgressChange", 
+					function(loadPercent, playedPercentRelative, playedPercentAbsolute, playedTime, totalTime) {
+					jpPlayTime.text($.jPlayer.convertTime(playedTime));
+					jpTotalTime.text($.jPlayer.convertTime(totalTime));
+				})
+				.jPlayer("onSoundComplete", function() {
+					playListNext();
+				});
+
+				/**
+				* click previous button, plays previous song
+				*/
+				$("#jplayer_previous").bind('click', function(){
+					playListPrev();
+					$(this).blur();
+					return false;
+				});
+
+				/**
+				* click next button, plays next song
+				*/
+				$("#jplayer_next").bind('click', function() {
+					playListNext();
+					$(this).blur();
+					return false;
+				});
+
+				/**
+				* plays song in position i of the list of songs (playlist)
+				*/
+				function playSong(i){
+					var $next_song 		= $list.find('li:nth-child('+ i +')');
+					var mp3				= $next_song.find('.mp_mp3').html();
+					var ogg				= $next_song.find('.mp_ogg').html();
+					$list.find('.jplayer_playlist_current').removeClass("jplayer_playlist_current");
+					$next_song.find('a').addClass("jplayer_playlist_current");
+					$("#jquery_jplayer").jPlayer("setFile", mp3, ogg).jPlayer("play");
+				}
+
+				/**
+				* plays the next song in the playlist
+				*/
+				function playListNext() {
+					var $list_nmb_elems = $list.children().length;
+					var $curr 			= $list.find('.jplayer_playlist_current');
+					var idx				= $curr.parent().index();
+					var index 			= (idx < $list_nmb_elems-1) ? idx+1 : 0;
+					playSong(index+1);
+				}
+
+				/**
+				* plays the previous song in the playlist
+				*/
+				function playListPrev() {
+					var $list_nmb_elems = $list.children().length;
+					var $curr 			= $list.find('.jplayer_playlist_current');
+					var idx				= $curr.parent().index();
+					var index 			= (idx-1 >= 0) ? idx-1 : $list_nmb_elems-1;
+					playSong(index+1);
+				}
+				
+				/**
+				* User clicks the play icon on one of the songs listed for an Album.
+				* Adds it to the Playlist, and plays it
+				*/
+				function addFirst(song_idx,name,mp3,ogg) {
+					$list.empty();
+					/**
+					* each song element in the playlist has:
+					* - span for the close / remove action
+					* - the mp3 path
+					* - the ogg path
+					*/
+					var song_html = "<a href='#' class='jplayer_playlist_current' tabindex='1'>" + name + "</a>";
+					song_html 	 += "<span></span>";
+					song_html 	 += "<div class='mp_mp3' style='display:none;'>"+mp3+"</div>";
+					song_html 	 += "<div class='mp_ogg' style='display:none;'>"+ogg+"</div>";
+					var $listItem = $("<li/>",{
+						id			: song_idx,	
+						className	: 'jplayer_playlist_current',
+						html 		: song_html
+					});
+					$list.append($listItem);
+					//event to play the song when User clicks on it
+					$listItem.find('a').bind('click',clickSong);
+					//event to remove the song from the playlist when User clicks the remove button
+					$listItem.find('span').bind('click',removeSong);
+					//start playing it
+					$("#jquery_jplayer").jPlayer("setFile", mp3, ogg).jPlayer("play");
+					jpTotalTime.show();
+					jpPlayTime.show();
+				}
+				
+				/**
+				* adds a song to the playlist, if not there already.
+				* if it is the only one, start playing it
+				*/
+				function addToPlayList(song_idx,name,mp3,ogg) {
+					var $list_nmb_elems = $list.children().length;
+					//if already in the list return
+					if($list.find('#'+song_idx).length)
+						return;
+					//class for the current song being played
+					var c = '';
+					if($list_nmb_elems == 0)
+						c = 'jplayer_playlist_current';
+					var song_html = "<a href='#' class="+c+" tabindex='1'>" + name + "</a>";
+					song_html 	 += "<span></span>";
+					song_html 	 += "<div class='mp_mp3' style='display:none;'>"+mp3+"</div>";
+					song_html 	 += "<div class='mp_ogg' style='display:none;'>"+ogg+"</div>";
+					var $listItem = $("<li/>",{
+						id			: song_idx,	
+						html 		: song_html
+					});
+					$list.append($listItem);
+					//if its the only song play it
+					if($list_nmb_elems == 0){
+						$("#jquery_jplayer").jPlayer("setFile", mp3, ogg).jPlayer("play");
+						jpTotalTime.show();
+						jpPlayTime.show();
+					}
+					$listItem.find('a').bind('click',clickSong);
+					$listItem.find('span').bind('click',removeSong);
+				}
+				
+				/**
+				* removes a song from the playlist.
+				* if the song was the current one, and there are more songs 
+				* in the playlist, then plays the next one.
+				* if there are no more, stops the player, and removes the status bar
+				* otherwise keeps playing whatever song was being played
+				*/
+				function removeSong() {
+					var $this 	= $(this); 
+					var current = $this.parent().find('a.jplayer_playlist_current').length;
+					$this.parent().remove();
+					var $list_nmb_elems = $list.children().length;
+					if($list_nmb_elems > 0 && current)
+						playListNext();
+					else if($list_nmb_elems == 0){
+						$("#jquery_jplayer").jPlayer("clearFile");
+						jpTotalTime.hide();
+						jpPlayTime.hide();
+					}	
+					return false;
+				}
+				
+				/**
+				* User clicks on a song in the playlist. Plays it
+				*/
+				function clickSong() {
+						var index = $(this).parent().index();
+						playSong(index+1);
+						return false;
+				}
+				
+				/**
+				* The next are the events for clicking on both "play" and "add to playlist" icons
+				*/
+				$('#mp_content_wrapper').find('.mp_play').bind('click',function(){
+					var $this 		= $(this);
+					var $paths		= $this.parent().siblings('.mp_song_info');
+					var title   	= $paths.find('.mp_song_title').html();
+					var mp3			= $paths.find('.mp_mp3').html();
+					var ogg			= $paths.find('.mp_ogg').html();
+					var album_id 	= $this.closest('.mp_content').attr('id');
+					var song_index	= $this.parent().parent().index();
+					var song_idx	= album_id + '_' + song_index;
+					//add to playlist and play the song
+					addFirst(song_idx,title,mp3,ogg);
+				});
+				$('#mp_content_wrapper').find('.mp_addpl').bind('click',function(){
+					var $this 		= $(this);
+					var $paths		= $this.parent().siblings('.mp_song_info');
+					var title   	= $paths.find('.mp_song_title').html();
+					var mp3			= $paths.find('.mp_mp3').html();
+					var ogg			= $paths.find('.mp_ogg').html();
+					var album_id 	= $this.closest('.mp_content').attr('id');
+					var song_index	= $this.parent().parent().index();
+					var song_idx	= album_id + '_' + song_index;
+					//add to playlist and play the song if none is there
+					addToPlayList(song_idx,title,mp3,ogg);
+				});
+				
+				/**
+				* we want to show on the album image, the play button for playing the whole album
+				*/
+				$('#mp_content_wrapper').find('.mp_content').bind('mouseenter',function(){
+					var $this 		= $(this);
+					$this.find('.mp_playall').show();
+				}).bind('mouseleave',function(){
+					var $this 		= $(this);
+					$this.find('.mp_playall').hide();
+				});
+				
+				/**
+				* to play the whole album, we play the first song and add all the others to the playlist.
+				* playing the first one, guarantees us that the playlist is set to empty before
+				*/
+				$('#mp_content_wrapper').find('.mp_playall').bind('click',function(){
+					var $this 		= $(this);
+					var $album		= $this.parent();
+					$album.find('.mp_play:first').trigger('click');
+					$album.find('.mp_addpl').trigger('click');
+				})
+				
+				/**
+				* playlist songs can be reordered
+				*/
+				$list.sortable();
+				$list.disableSelection();
+				
+			});
+		</script>
+        <style>
+			.reference{
+				font-family:Arial;
+				position:relative;
+				width:100%;
+				font-size:12px;
+				text-transform:uppercase;
+				text-align:center;
+			}
+			.reference a{
+				color:#f9f9f9;
+				text-decoration:none;
+				margin-right:20px;
+			}
+			.mp_content_init{
+				padding: 0;
+				margin: 0;
+				font-size: 50px;
+				font-family: "Abril Fatface";
+				color: white;
+				position: absolute;
+				text-align:center;	
+			}
+			.mp_content_init > img{
+				padding: 0;
+				width: 1010px;
+				height: 600px;
+				text-align: center;	
+			}
+		</style>
+    </head>
+    <body>
+		<div class="mp_wrapper">
+			<div id="mp_content_wrapper" class="mp_content_wrapper">
+				<div class="mp_content" id="c_album_1">
+					<img src="music/1987/album.jpg" alt="1987_Heroe_de_leyenda"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Heroe de leyenda</h3>
+						<p>EMI 1987</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Heroe de leyenda (Version maxi)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Heroe de leyenda (V. Maxi)</span>
+								<span class="mp_ogg">music/1987/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>El mar no cesa</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El mar no cesa</span>
+								<span class="mp_ogg">music/1987/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La lluvia gris</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La lluvia gris</span>
+								<span class="mp_ogg">music/1987/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Heroe de leyenda</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Heroe de leyenda</span>
+								<span class="mp_ogg">music/1987/04.mp3</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_2">
+					<img src="music/1988/album.jpg" alt="1988_El_mar_no_cesa"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>El mar no cesa</h3>
+						<p>EMI 1988</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Mar adentro</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Mar adentro</span>
+								<span class="mp_ogg">music/1988/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hace tiempo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hace tiempo</span>
+								<span class="mp_ogg">music/1988/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Fuente esperanza</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Fuente esperanza</span>
+								<span class="mp_ogg">music/1988/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>No mas lagrimas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">No mas lagrimas</span>
+								<span class="mp_ogg">music/1988/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Olvidado</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Olvidado</span>
+								<span class="mp_ogg">music/1988/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La lluvia gris</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La lluvia gris</span>
+								<span class="mp_ogg">music/1988/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Flor venenosa</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor venenosa</span>
+								<span class="mp_ogg">music/1988/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Agosto</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Agosto</span>
+								<span class="mp_ogg">music/1988/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>El estanque</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El estanque</span>
+								<span class="mp_ogg">music/1988/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La vision de nuestras almas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La vision de nuestras almas</span>
+								<span class="mp_ogg">music/1988/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La isla de las iguanas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La isla de las iguanas</span>
+								<span class="mp_ogg">music/1988/11.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>... 16</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">... 16</span>
+								<span class="mp_ogg">music/1988/12.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Heroe de leyenda</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Heroe de leyenda</span>
+								<span class="mp_ogg">music/1988/13.mp3</span>
+							</div>
+						</div>					
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_3">
+					<img src="music/1989/album.jpg" alt="1991_Senda_91"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Senda 91</h3>
+						<p>EMI 1991</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Mar adentro</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Mar adentro</span>
+								<span class="mp_ogg">music/1989/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>No mas lagrimas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">No mas lagrimas</span>
+								<span class="mp_ogg">music/1989/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La vision de nuestras almas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La vision de nuestras almas</span>
+								<span class="mp_ogg">music/1989/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>El estanque</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El estanque</span>
+								<span class="mp_ogg">music/1989/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Olvidado</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Olvidado</span>
+								<span class="mp_ogg">music/1989/05.mp3</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_4">
+					<img src="music/1990/album.jpg" alt="1990_Senderos_de_traicion"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Senderos de traicion</h3>
+						<p>EMI 1990</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Entre dos tierras</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras</span>
+								<span class="mp_ogg">music/1990/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Maldito duende</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende</span>
+								<span class="mp_ogg">music/1990/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La carta</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La carta</span>
+								<span class="mp_ogg">music/1990/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Malas intenciones</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Malas intenciones</span>
+								<span class="mp_ogg">music/1990/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Sal</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sal</span>
+								<span class="mp_ogg">music/1990/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Senda</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Senda</span>
+								<span class="mp_ogg">music/1990/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hechizo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hechizo</span>
+								<span class="mp_ogg">music/1990/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Oracion</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion</span>
+								<span class="mp_ogg">music/1990/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Despertar</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Despertar</span>
+								<span class="mp_ogg">music/1990/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Decadencia</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Decadencia</span>
+								<span class="mp_ogg">music/1990/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Con nombre de guerra</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Con nombre de guerra</span>
+								<span class="mp_ogg">music/1990/11.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>El cuadro II</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El cuadro II</span>
+								<span class="mp_ogg">music/1990/12.mp3</span>
+							</div>
+						</div>		
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_5">
+					<img src="music/1991/album.jpg" alt="1991_Senda_91"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Senda 91</h3>
+						<p>EMI 1990</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Hace tiempo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hace tiempo</span>
+								<span class="mp_ogg">music/1991/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Maldito duende</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende</span>
+								<span class="mp_ogg">music/1991/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Decadencia</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Decadencia</span>
+								<span class="mp_ogg">music/1991/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Con nombre de guerra</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Con nombre de guerra</span>
+								<span class="mp_ogg">music/1991/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Oracion</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion</span>
+								<span class="mp_ogg">music/1991/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>El mar no cesa</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El mar no cesa</span>
+								<span class="mp_ogg">music/1991/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>El cuadro III</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El cuadro III</span>
+								<span class="mp_ogg">music/1991/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hologramas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hologramas</span>
+								<span class="mp_ogg">music/1991/08.mp3</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_6">
+					<img src="music/1993/album.jpg" alt="1993_El_espiritu_del_vino"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>El espiritu del vino</h3>
+						<p>EMI 1993</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Nuestros nombres</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres</span>
+								<span class="mp_ogg">music/1993/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Tesoro</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Tesoro</span>
+								<span class="mp_ogg">music/1993/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Los placeres de la pobreza</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Los placeres de la pobreza</span>
+								<span class="mp_ogg">music/1993/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La herida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La herida</span>
+								<span class="mp_ogg">music/1993/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Sirena Varada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada</span>
+								<span class="mp_ogg">music/1993/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La apariencia no es sincera</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La apariencia no es sincera</span>
+								<span class="mp_ogg">music/1993/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Z</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Z</span>
+								<span class="mp_ogg">music/1993/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Culpable</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Culpable</span>
+								<span class="mp_ogg">music/1993/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Camino del exceso</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Camino del exceso</span>
+								<span class="mp_ogg">music/1993/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Flor de loto</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor de loto</span>
+								<span class="mp_ogg">music/1993/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Refugio interior</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Refugio interior</span>
+								<span class="mp_ogg">music/1993/11.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Sangre Hirviendo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sangre Hirviendo</span>
+								<span class="mp_ogg">music/1993/12.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Tumbas de sal</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Tumbas de sal</span>
+								<span class="mp_ogg">music/1993/13.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Bendecida 2</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Bendecida 2</span>
+								<span class="mp_ogg">music/1993/14.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Bendecida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Bendecida</span>
+								<span class="mp_ogg">music/1993/15.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La alacena</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La alacena</span>
+								<span class="mp_ogg">music/1993/16.mp3</span>
+							</div>
+						</div>	
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_7">
+					<img src="music/1995/album.jpg" alt="1995_Avalancha"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Avalancha</h3>
+						<p>EMI 1995</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Derivas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Derivas</span>
+								<span class="mp_ogg">music/1995/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Rueda fortuna</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Rueda fortuna</span>
+								<span class="mp_ogg">music/1995/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Deshacer el mundo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Deshacer el mundo</span>
+								<span class="mp_ogg">music/1995/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Iberia Sumergida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Iberia Sumergida</span>
+								<span class="mp_ogg">music/1995/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Avalancha</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Avalancha</span>
+								<span class="mp_ogg">music/1995/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>En brazos de la fiebre</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">En brazos de la fiebre</span>
+								<span class="mp_ogg">music/1995/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Parasiempre</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Parasiempre</span>
+								<span class="mp_ogg">music/1995/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La chispa adecuada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La chispa adecuada</span>
+								<span class="mp_ogg">music/1995/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Dias de borrasca</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Dias de borrasca</span>
+								<span class="mp_ogg">music/1995/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Morir todavia</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Morir todavia</span>
+								<span class="mp_ogg">music/1995/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Opio</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Opio</span>
+								<span class="mp_ogg">music/1995/11.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>La Espuma de Venus</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La Espuma de Venus</span>
+								<span class="mp_ogg">music/1995/12.mp3</span>
+							</div>
+						</div>		
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_8">
+					<img src="music/1996/album.jpg" alt="1996_Parasiempre"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Parasiempre</h3>
+						<p>EMI 1996</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Deshacer el mundo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Deshacer el mundo</span>
+								<span class="mp_ogg">music/1996/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Iberia Sumergida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Iberia Sumergida</span>
+								<span class="mp_ogg">music/1996/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Dias de borrasca</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Dias de borrasca</span>
+								<span class="mp_ogg">music/1996/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Parasiempre</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Parasiempre</span>
+								<span class="mp_ogg">music/1996/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Camino del exceso</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Camino del exceso</span>
+								<span class="mp_ogg">music/1996/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Sirena Varada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada</span>
+								<span class="mp_ogg">music/1996/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Maldito duende</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende</span>
+								<span class="mp_ogg">music/1996/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La chispa adecuada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La chispa adecuada</span>
+								<span class="mp_ogg">music/1996/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Oracion</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion</span>
+								<span class="mp_ogg">music/1996/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Nuestros nombres</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres</span>
+								<span class="mp_ogg">music/1996/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hechizo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hechizo</span>
+								<span class="mp_ogg">music/1996/11.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Entre dos tierras</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras</span>
+								<span class="mp_ogg">music/1996/12.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Avalancha</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Avalancha</span>
+								<span class="mp_ogg">music/1996/13.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Flor de loto</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor de loto</span>
+								<span class="mp_ogg">music/1996/14.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Flor venenosa</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor venenosa</span>
+								<span class="mp_ogg">music/1996/15.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La herida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La herida</span>
+								<span class="mp_ogg">music/1996/16.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Mar adentro</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Mar adentro</span>
+								<span class="mp_ogg">music/1996/17.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Opio</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Opio</span>
+								<span class="mp_ogg">music/1996/18.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Decadencia</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Decadencia</span>
+								<span class="mp_ogg">music/1996/19.mp3</span>
+							</div>
+						</div>	
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_9">
+					<img src="music/1998/album.jpg" alt="1998_Rarezas"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Rarezas</h3>
+						<p>EMI 1998</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Apuesta por el Rock and roll</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Apuesta por el Rock and roll</span>
+								<span class="mp_ogg">music/1998/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Virus</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Virus</span>
+								<span class="mp_ogg">music/1998/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Babel</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Babel</span>
+								<span class="mp_ogg">music/1998/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>...y parasiempre</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">...y parasiempre</span>
+								<span class="mp_ogg">music/1998/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Medicina humeda</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Medicina humeda</span>
+								<span class="mp_ogg">music/1998/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>El cuadro</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El cuadro</span>
+								<span class="mp_ogg">music/1998/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>No mas lagrimas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">No mas lagrimas</span>
+								<span class="mp_ogg">music/1998/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La chispa adecuada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La chispa adecuada</span>
+								<span class="mp_ogg">music/1998/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Acustica</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Acustica</span>
+								<span class="mp_ogg">music/1998/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Opio</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Opio</span>
+								<span class="mp_ogg">music/1998/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Morir todavia</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Morir todavia</span>
+								<span class="mp_ogg">music/1998/11.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hologramas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hologramas</span>
+								<span class="mp_ogg">music/1998/12.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Nuestros nombres</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres</span>
+								<span class="mp_ogg">music/1998/13.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Heroe de leyenda</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Heroe de leyenda</span>
+								<span class="mp_ogg">music/1998/14.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Deshacer el mundo (demo bonus)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Deshacer el mundo (demo bonus)</span>
+								<span class="mp_ogg">music/1998/15.mp3</span>
+							</div>
+						</div>	
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_10">
+					<img src="music/2000/album.jpg" alt="2000_Canciones_1994_-_1996"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Canciones 1994 - 1996</h3>
+						<p>EMI 2000</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Entre dos tierras</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras</span>
+								<span class="mp_ogg">music/2000/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Maldito duende</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende</span>
+								<span class="mp_ogg">music/2000/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Mar adentro</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Mar adentro</span>
+								<span class="mp_ogg">music/2000/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Sirena Varada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada</span>
+								<span class="mp_ogg">music/2000/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Deshacer el mundo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Deshacer el mundo</span>
+								<span class="mp_ogg">music/2000/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La herida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La herida</span>
+								<span class="mp_ogg">music/2000/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Apuesta por el Rock and roll</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Apuesta por el Rock and roll</span>
+								<span class="mp_ogg">music/2000/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Flor venenosa</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor venenosa</span>
+								<span class="mp_ogg">music/2000/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Despertar</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Despertar</span>
+								<span class="mp_ogg">music/2000/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Opio</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Opio</span>
+								<span class="mp_ogg">music/2000/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Tesoro</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Tesoro</span>
+								<span class="mp_ogg">music/2000/11.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>En brazos de la fiebre</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">En brazos de la fiebre</span>
+								<span class="mp_ogg">music/2000/12.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Fuente esperanza</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Fuente esperanza</span>
+								<span class="mp_ogg">music/2000/13.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Oracion</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion</span>
+								<span class="mp_ogg">music/2000/14.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>No mas lagrimas</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">No mas lagrimas</span>
+								<span class="mp_ogg">music/2000/15.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Iberia sumergida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Iberia sumergida</span>
+								<span class="mp_ogg">music/2000/16.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La chispa adecuada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La chispa adecuada</span>
+								<span class="mp_ogg">music/2000/17.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Heroe de leyenda</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Heroe de leyenda</span>
+								<span class="mp_ogg">music/2000/18.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Con nombre de guerra</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Con nombre de guerra</span>
+								<span class="mp_ogg">music/2000/19.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Flor de loto</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor de loto</span>
+								<span class="mp_ogg">music/2000/20.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Avalancha</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Avalancha</span>
+								<span class="mp_ogg">music/2000/21.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Agosto</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Agosto</span>
+								<span class="mp_ogg">music/2000/22.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Malas intenciones</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Malas intenciones</span>
+								<span class="mp_ogg">music/2000/23.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Nuestros nombres</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres</span>
+								<span class="mp_ogg">music/2000/24.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Virus</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Virus</span>
+								<span class="mp_ogg">music/2000/25.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La carta</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La carta</span>
+								<span class="mp_ogg">music/2000/26.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Camino del exceso</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Camino del exceso</span>
+								<span class="mp_ogg">music/2000/27.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Hace tiempo</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hace tiempo</span>
+								<span class="mp_ogg">music/2000/28.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>El estanque</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El estanque</span>
+								<span class="mp_ogg">music/2000/29.mp3</span>
+							</div>
+						</div>	
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_11">
+					<img src="music/2004/album.jpg" alt="2004_Antologia_audiovisual"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Antologia audiovisual</h3>
+						<p>EMI 2004</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Entre dos tierras</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras</span>
+								<span class="mp_ogg">music/2000/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Mar adentro</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Mar adentro</span>
+								<span class="mp_ogg">music/2000/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Iberia sumergida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Iberia sumergida</span>
+								<span class="mp_ogg">music/2000/16.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Maldito duende</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende</span>
+								<span class="mp_ogg">music/2000/02.mp3</span>
+							</div>
+						</div>
+
+						<div>
+							<h3>Sirena Varada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada</span>
+								<span class="mp_ogg">music/2000/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Apuesta por el Rock and roll</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Apuesta por el Rock and roll</span>
+								<span class="mp_ogg">music/2000/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La herida</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La herida</span>
+								<span class="mp_ogg">music/2000/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Flor venenosa</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor venenosa</span>
+								<span class="mp_ogg">music/2000/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La chispa adecuada</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La chispa adecuada</span>
+								<span class="mp_ogg">music/2000/17.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Avalancha</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Avalancha</span>
+								<span class="mp_ogg">music/2000/21.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Con nombre de guerra</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Con nombre de guerra</span>
+								<span class="mp_ogg">music/2000/19.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Nuestros nombres</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres</span>
+								<span class="mp_ogg">music/2000/24.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Flor de loto</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor de loto</span>
+								<span class="mp_ogg">music/2000/20.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Heroe de leyenda</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Heroe de leyenda</span>
+								<span class="mp_ogg">music/2000/18.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La carta</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La carta</span>
+								<span class="mp_ogg">music/2000/26.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Camino del exceso</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Camino del exceso</span>
+								<span class="mp_ogg">music/2000/27.mp3</span>
+							</div>
+						</div>	
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_12">
+					<img src="music/2005/album.jpg" alt="2005_El_ruido_y_la_furia"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>El ruido y la furia</h3>
+						<p>EMI 2005</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Intro / Iberia sumergida (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Intro / Iberia sumergida (version 95)</span>
+								<span class="mp_ogg">music/2005/01.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Rueda fortuna (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Iberia sumergida (version 95)</span>
+								<span class="mp_ogg">music/2005/02.mp3</span>
+							</div>
+						</div>	
+						
+						<div>
+							<h3>Sirena Varada (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada (version 95)</span>
+								<span class="mp_ogg">music/2005/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Parasiempre (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Parasiempre (version 95)</span>
+								<span class="mp_ogg">music/2005/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Maldito duende (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende (version 95)</span>
+								<span class="mp_ogg">music/2005/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Oracion (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion (version 95)</span>
+								<span class="mp_ogg">music/2005/06.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Nuestros nombres (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres (version 95)</span>
+								<span class="mp_ogg">music/2005/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Entre dos tierras (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras (version 95)</span>
+								<span class="mp_ogg">music/2005/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Avalancha (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Avalaancha (version 95)</span>
+								<span class="mp_ogg">music/2005/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Mar adentro (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Mar adentro</span>
+								<span class="mp_ogg">music/2005/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Decadencia (version 95)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Decadencia (version 95)</span>
+								<span class="mp_ogg">music/2005/11.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Intro / Maldito duende (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Intro / Maldito duende (version 93)</span>
+								<span class="mp_ogg">music/2005/12.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>El mar no cesa (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El mar no cesa (version 93)</span>
+								<span class="mp_ogg">music/2005/13.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hechizo (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hechizo (version 93)</span>
+								<span class="mp_ogg">music/2005/14.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Flor de loto (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor de loto (version 93)</span>
+								<span class="mp_ogg">music/2005/15.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Oracion (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion (version 93)</span>
+								<span class="mp_ogg">music/2005/16.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Tumbas de sal (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Tumbas de sal (version 93)</span>
+								<span class="mp_ogg">music/2005/17.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hace tiempo (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hace tiempo (version 93)</span>
+								<span class="mp_ogg">music/2005/18.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Entre dos tierras (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras (version 93)</span>
+								<span class="mp_ogg">music/2005/19.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Bendecida (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Bendecida (version 93)</span>
+								<span class="mp_ogg">music/2005/20.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La herida (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La herida (version 93)</span>
+								<span class="mp_ogg">music/2005/21.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Sangre hirviendo / Outro (version 93)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sangre hirviendo / Outro (version 93)</span>
+								<span class="mp_ogg">music/2005/22.mp3</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_13">
+					<img src="music/2007/album.jpg" alt="2007_Tour_2007"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Tour 2007</h3>
+						<p>EMI 2007</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>El estanque (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El esanque (Tour 2007)</span> (Tour 2007)
+								<span class="mp_ogg">music/2007/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Deshacer el mundo (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Deshacer el mundo (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Mar adentro (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Mar adentro (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/03.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La carta (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La carta (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/04.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Agosto (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Agosto (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/05.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Sirena Varada (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/06.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Opio (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Opio (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/07.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La herida (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La herida (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/08.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Flor venenosa (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor venenosa (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/09.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Despertar (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Despertar (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/10.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Apuesta por el RnR (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Apuesta por el rock and roll (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/11.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Heroe de leyenda (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Heroe de leyenda (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/12.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Con nombre de guerra (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Con nombre de guerra (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/13.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>No mas lagrimas (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">No mas lagrimas (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/14.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Nuestros nombres (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/15.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>El mar no cesa (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El mar no cesa (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/16.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Entre dos tierras (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/17.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Maldito duende (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/18.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Iberia sumergida (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Iberia sumergida (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/19.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Avalancha (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Avalancha (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/20.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Bendecida (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Bendecida (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/21.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Tumbas de sal (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Tumbas de sal (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/22.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Oracion (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/23.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Tesoro (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Tesoro (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/24.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Malas intenciones (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Malas intenciones (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/25.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La chispa adecuada (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La chispa adecuada (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/26.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Fuente esperanza (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Fuente esperanza (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/27.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>En brazos de la fiebre (Tour 2007)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">En brazos de la fiebre (Tour 2007)</span>
+								<span class="mp_ogg">music/2007/28.mp3</span>
+							</div>
+						</div>	
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_14">
+					<img src="music/2011/album.jpg" alt="2011_Live_in_Germany"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Live in Germany</h3>
+						<p>EMI 2011</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Nuestros nombres (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres (Live)</span>
+								<span class="mp_ogg">music/2011/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Maldito duende (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende (Live)</span>
+								<span class="mp_ogg">music/2011/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Sirena Varada (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada (Live)</span>
+								<span class="mp_ogg">music/2011/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Camino del exceso (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Camino del exceso (Live)</span>
+								<span class="mp_ogg">music/2011/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hechizo (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hechizo (Live)</span>
+								<span class="mp_ogg">music/2011/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Olvidado (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Olvidado (Live)</span>
+								<span class="mp_ogg">music/2011/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Flor de loto (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor de loto (Live)</span>
+								<span class="mp_ogg">music/2011/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Oracion (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion (Live)</span>
+								<span class="mp_ogg">music/2011/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La herida (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La herida (Live)</span>
+								<span class="mp_ogg">music/2011/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Entre dos tierras (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras (Live)</span>
+								<span class="mp_ogg">music/2011/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Decadencia (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Decadencia (Live)</span>
+								<span class="mp_ogg">music/2011/11.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Los placeres de la pobreza (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Los placeres de la pobreza (Live)</span>
+								<span class="mp_ogg">music/2011/12.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hace tiempo (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hace tiempo (Live)</span>
+								<span class="mp_ogg">music/2011/13.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Con nombre de guerra (Live)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Con nombre de guerra (Live)</span>
+								<span class="mp_ogg">music/2011/14.mp3</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_15">
+					<img src="music/2013/album.jpg" alt="2013_El_espiritu_del_vino"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>El espiritu del vino<br>20th Anniversary Edition</br>Gran Reserva</h3>
+						<p>EMI 2013</p></br>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Nuestros nombres (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Nuestros nombres (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/01.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Tesoro (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Tesoro (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/02.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Los placeres de la pobreza (2012 R)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Los placeres de la pobreza (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/03.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La herida (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La herida (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/04.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Sirena Varada (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/05.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>La apariencia no es sincera (2012 R)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La apariencia no es sincera (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/06.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Z (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Z (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/07.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Culpable (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Culpable (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/08.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Camino del exceso (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Camino del exceso (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/09.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Flor de loto (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Flor de loto (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/10.mp3</span>
+							</div>
+						</div>
+						<div>
+							<h3>Refugio interior (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Refugio interior (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/11.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Sangre Hirviendo (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sangre Hirviendo (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/12.mp3</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Tumbas de sal</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Tumbas de sal (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/13.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Bendecida 2</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Bendecida 2 (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/14.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Bendecida (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Bendecida (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/15.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La alacena (2012 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La alacena (2012 Remaster)</span>
+								<span class="mp_ogg">music/2013/16.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>El estanque (acustico)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El estanque (acustico)</span>
+								<span class="mp_ogg">music/2013/17.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Deshacer el mundo (acustico)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Deshacer el mundo (acustico)</span>
+								<span class="mp_ogg">music/2013/18.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Maldito duende (acustico)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende (acustico)</span>
+								<span class="mp_ogg">music/2013/19.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>La carta (acustico)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La carta (acustico)</span>
+								<span class="mp_ogg">music/2013/20.mp3</span>
+							</div>
+						</div>	
+						<div>
+							<h3>Sirena Varada (acustico)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sirena Varada (acustico)</span>
+								<span class="mp_ogg">music/2013/21.mp3</span>
+							</div>
+						</div>	
+					</div>
+				</div>
+				<div class="mp_content" id="c_album_16">
+					<img src="music/2017/album.jpg" alt="2017_Senderos_de_traicion_25th"/>
+					<a href="#" class="mp_playall">Play all</a>
+					<div class="mp_description">
+						<h3>Senderos de traicion</br>25 aniversario</h3>
+						<p>EMI 2017</p>
+						</br><p>Ripeado por X@um</p>
+						<p>heroesbotleg@gmail.com</p>
+					</div>
+					<div class="mp_songs">
+						<div>
+							<h3>Entre dos tierras (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/01.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Maldito duende (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/02.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>La carta (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">La carta (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/03.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Malas intenciones (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Malas intenciones (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/04.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Sal (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Sal (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/05.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Senda (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Senda (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/06.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Hechizo (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hechizo (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/07.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Oracion (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Oracion (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/08.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Despertar (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Despertar (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/09.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Decadencia (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Decadencia (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/10.ogg</span>
+							</div>
+						</div>
+						<div>
+							<h3>Con nombre de guerra (2017 Re)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Con nombre de guerra (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/11.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3>El cuadro II (2017 Remaster)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">El cuadro II (2017 Remaster)</span>
+								<span class="mp_ogg">music/2017/12.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Entre dos tierras (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Entre dos tierras (Live 91)</span>
+								<span class="mp_ogg">music/2017/13.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Senda (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Senda (Live 91)</span>
+								<span class="mp_ogg">music/2017/14.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Despertar (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Despertar (Live 91)</span>
+								<span class="mp_ogg">music/2017/15.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3> Flor venenosa (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title"> Flor venenosa (Live 91)</span>
+								<span class="mp_ogg">music/2017/16.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3> Agosto (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title"> Agosto (Live 91)</span>
+								<span class="mp_ogg">music/2017/17.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3> Hace tiempo (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title"> Hace tiempo (Live 91)</span>
+								<span class="mp_ogg">music/2017/18.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Maldito duende (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Maldito duende (Live 91)</span>
+								<span class="mp_ogg">music/2017/19.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Decadencia (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Decadencia (Live 91)</span>
+								<span class="mp_ogg">music/2017/20.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3> Mar adentro (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title"> Mar adentro (Live 91)</span>
+								<span class="mp_ogg">music/2017/21.ogg</span>
+							</div>
+						</div>		
+						<div>
+							<h3>Hechizo (Live 91)</h3>
+							<div class="mp_options">
+								<span class="mp_play">Play</span>
+								<span class="mp_addpl">Add to playlist</span>
+							</div>
+							<div class="mp_song_info" style="display:none;">
+								<span class="mp_song_title">Hechizo (Live 91)</span>
+								<span class="mp_ogg">music/2017/22.ogg</span>
+							</div>
+						</div>		
+					</div>
+				</div>
+			</div>
+			<div class="mp_player">
+				<div id="jquery_jplayer"></div>
+				<div class="jp-playlist-player">
+					<div class="jp-interface">
+						<ul class="jp-controls">
+							<li><a href="#" id="jplayer_play" class="jp-play" tabindex="1">play</a></li>
+							<li><a href="#" id="jplayer_pause" class="jp-pause" tabindex="1">pause</a></li>
+							<li><a href="#" id="jplayer_stop" class="jp-stop" tabindex="1">stop</a></li>
+							<li><a href="#" id="jplayer_volume_min" class="jp-volume-min" tabindex="1">min volume</a></li>
+							<li><a href="#" id="jplayer_volume_max" class="jp-volume-max" tabindex="1">max volume</a></li>
+							<li><a href="#" id="jplayer_previous" class="jp-previous" tabindex="1">previous</a></li>
+							<li><a href="#" id="jplayer_next" class="jp-next" tabindex="1">next</a></li>
+						</ul>
+						<div class="jp-progress">
+							<div id="jplayer_load_bar" class="jp-load-bar">
+								<div id="jplayer_play_bar" class="jp-play-bar"></div>
+							</div>
+						</div>
+						<div id="jplayer_volume_bar" class="jp-volume-bar">
+							<div id="jplayer_volume_bar_value" class="jp-volume-bar-value"></div>
+						</div>
+						<div id="jplayer_play_time" class="jp-play-time"></div>
+						<div id="jplayer_total_time" class="jp-total-time"></div>
+					</div>
+					<div id="jplayer_playlist" class="jp-playlist"><ul></ul></div>
+				</div>
+			</div>
+			<div class="mp_content_init" class="mp_content_init">
+				<img src="images/sueno_justos.jpg" alt="sueno_justos" />
+			</div>
+			<ul id="mp_albums" class="mp_albums jcarousel-skin">	
+				<li><img src="music/1987/thumb.jpg" alt="1987_Heroe_de_leyenda" /></li>
+				<li><img src="music/1988/thumb.jpg" alt="1988_El_mar_no_cesa" /></li>
+				<li><img src="music/1989/thumb.jpg" alt="1989_En_directo" /></li>
+				<li><img src="music/1990/thumb.jpg" alt="1990_Senderos_de_traicion" /></li>
+				<li><img src="music/1991/thumb.jpg" alt="1991_Senda_91" /></li>				
+				<li><img src="music/1993/thumb.jpg" alt="1993_El_espiritu_del_vino" /></li>				
+				<li><img src="music/1995/thumb.jpg" alt="1995_Avalancha" /></li>				
+				<li><img src="music/1996/thumb.jpg" alt="1996_Parasiempre" /></li>							
+				<li><img src="music/1998/thumb.jpg" alt="1998_Rarezas" /></li>				
+				<li><img src="music/2000/thumb.jpg" alt="2000_Canciones_1994_-_1996" /></li>	
+				<li><img src="music/2004/thumb.jpg" alt="2004_Antologia_audiovisual" /></li>	
+				<li><img src="music/2005/thumb.jpg" alt="2005_El_ruido_y_la_furia" /></li>	
+				<li><img src="music/2007/thumb.jpg" alt="2007_Tour_2007" /></li>	
+				<li><img src="music/2011/thumb.jpg" alt="2011_Live_in_Germany" /></li>	
+				<li><img src="music/2013/thumb.jpg" alt="2013_El_espiritu_del_vino_20th" /></li>	
+				<li><img src="music/2017/thumb.jpg" alt="2017_Senderos_de_traicion_25th" /></li>
+			</ul>
+		</div>
+
+       <!--<div class="reference">
+			<a href="http://tympanus.net/codrops/2010/07/26/music-portfolio-template/">back to the Codrops article</a>
+			<a href="http://www.flickr.com/photos/rickharris/">Photos by Rick Harris</a>
+			<div xmlns:cc="http://creativecommons.org/ns#" about="urn:sha1:SFMAAK7FTYXXBHDZUWL7QNJJAUE5WD4J"><a rel="cc:attributionURL" property="cc:attributionName" href="http://ccmixter.org/people/ramblinglibrarian/profile">Music Samples by Ivan Chew</a> <a rel="license" href="http://creativecommons.org/licenses/by-nc/3.0/">CC BY-NC 3.0</a></div>
+		</div>-->
+
+    </body>
+</html>
